@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Stock Trend Predictor</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: url("https://as2.ftcdn.net/jpg/01/27/54/43/1000_F_127544348_kyMVOb7uQibQDUNSKFBoxnihzBO4z7LZ.jpg");
+      min-height: 100vh;
+      color: #ffffff;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Animated background elements */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 20%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+      animation: backgroundShift 10s ease-in-out infinite alternate;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    @keyframes backgroundShift {
+      0% { transform: translateX(-10px) translateY(-10px); }
+      100% { transform: translateX(10px) translateY(10px); }
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 40px;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 60px 40px;
+      min-height: 100vh;
+      align-items: start;
+    }
+
+    /* Input Panel */
+    .input-panel {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 40px;
+      position: sticky;
+      top: 60px;
+      box-shadow: 
+        0 25px 50px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .input-panel:hover {
+      transform: translateY(-2px);
+      box-shadow: 
+        0 35px 70px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    .panel-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #00d4ff, #7b68ee);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .panel-subtitle {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 32px;
+      font-weight: 300;
+    }
+
+    .input-group {
+      margin-bottom: 24px;
+    }
+
+    .input-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 16px 20px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      color: #ffffff;
+      font-size: 16px;
+      font-family: inherit;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #00d4ff;
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2);
+      transform: translateY(-1px);
+    }
+
+    input::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    select option {
+      background: #1a1a2e;
+      color: #ffffff;
+    }
+
+    .predict-button {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, #00d4ff, #7b68ee);
+      border: none;
+      border-radius: 12px;
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .predict-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .predict-button:hover::before {
+      left: 100%;
+    }
+
+    .predict-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 30px rgba(0, 212, 255, 0.4);
+    }
+
+    .predict-button:active {
+      transform: translateY(0);
+    }
+
+    /* Output Panel */
+    .output-panel {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 40px;
+      min-height: 600px;
+      box-shadow: 
+        0 25px 50px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .output-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #ff6b6b, #ffd93d);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .placeholder-text {
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 18px;
+      font-weight: 300;
+      line-height: 1.6;
+    }
+
+    .placeholder-icon {
+      font-size: 64px;
+      margin-bottom: 24px;
+      opacity: 0.3;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    canvas {
+      margin-top: 20px;
+      border-radius: 12px;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+    }
+
+    .error {
+      color: #ff6b6b;
+      background: rgba(255, 107, 107, 0.1);
+      padding: 16px 20px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 107, 107, 0.3);
+      font-weight: 500;
+      backdrop-filter: blur(10px);
+    }
+
+    /* Loading animation */
+    .loading {
+      display: none;
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top: 3px solid #00d4ff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Responsive design */
+    @media (max-width: 1024px) {
+      .container {
+        grid-template-columns: 1fr;
+        gap: 30px;
+        padding: 40px 20px;
+      }
+      
+      .input-panel {
+        position: static;
+      }
+    }
+
+    /* Glowing effects */
+    .glow {
+      position: relative;
+    }
+
+    .glow::after {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      background: linear-gradient(135deg, #00d4ff, #7b68ee, #ff6b6b);
+      border-radius: inherit;
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .glow:hover::after {
+      opacity: 0.3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="input-panel glow">
+      <h1 class="panel-title">Stock Predictor</h1>
+      <p class="panel-subtitle">Advanced AI-powered market analysis</p>
+      
+      <form method="post">
+        <div class="input-group">
+          <label class="input-label">Stock Ticker</label>
+          <input type="text" name="ticker" placeholder="Enter ticker symbol (e.g. AAPL)" required>
+        </div>
+        
+        <div class="input-group">
+          <label class="input-label">Analysis Period</label>
+          <select name="period">
+            <option value="6mo">Last 6 months</option>
+            <option value="1y">Last 1 year</option>
+            <option value="2y">Last 2 years</option>
+            <option value="5y">Last 5 years</option>
+          </select>
+        </div>
+        
+        <button type="submit" class="predict-button">
+          Generate Forecast
+        </button>
+      </form>
+    </div>
+
+    <div class="output-panel">
+      {% if error %}
+        <div class="error">{{ error }}</div>
+      {% else %}
+        {% if forecast and forecast|length > 0 %}
+          <h2 class="output-title">{{ prediction_days }}-Day Forecast for {{ stock }}</h2>
+          <canvas id="forecastChart" width="700" height="450"></canvas>
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+          <script>
+            const forecast = {{ forecast | tojson }};
+            const labels = forecast.map((_, i) => 'Day ' + (i + 1));
+            const ctx = document.getElementById('forecastChart').getContext('2d');
+            
+            // Create gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, 450);
+            gradient.addColorStop(0, 'rgba(0, 212, 255, 0.8)');
+            gradient.addColorStop(0.5, 'rgba(123, 104, 238, 0.4)');
+            gradient.addColorStop(1, 'rgba(255, 107, 107, 0.1)');
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Predicted Price ($)',
+                        data: forecast,
+                        borderColor: '#00d4ff',
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#00d4ff',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        pointHoverBackgroundColor: '#7b68ee',
+                        pointHoverBorderColor: '#ffffff',
+                        pointHoverBorderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ffffff',
+                                font: {
+                                    family: 'Inter',
+                                    size: 14,
+                                    weight: '500'
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                font: {
+                                    family: 'Inter',
+                                    size: 12
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)',
+                                borderColor: 'rgba(255, 255, 255, 0.2)'
+                            }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                font: {
+                                    family: 'Inter',
+                                    size: 12
+                                },
+                                callback: function(value) {
+                                    return '$' + value.toFixed(2);
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)',
+                                borderColor: 'rgba(255, 255, 255, 0.2)'
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    hover: {
+                        animationDuration: 300
+                    },
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+          </script>
+        {% else %}
+          <div class="placeholder-icon">📈</div>
+          <div class="placeholder-text">
+            Enter a stock ticker and select an analysis period to generate your AI-powered forecast
+          </div>
+        {% endif %}
+      {% endif %}
+      
+      <div class="loading" id="loadingSpinner"></div>
+    </div>
+  </div>
+
+  <script>
+    // Add loading animation on form submit
+    document.querySelector('form').addEventListener('submit', function() {
+      document.getElementById('loadingSpinner').style.display = 'block';
+    });
+  </script>
+</body>
+</html>
